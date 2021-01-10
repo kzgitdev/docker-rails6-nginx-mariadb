@@ -1,0 +1,83 @@
+version: '3.9'
+
+services:
+  # Ruby on Rails 5.x
+  app:
+    container_name: cs-rails6-app
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - RUBY_TAG=$RUBY_TAG
+    env_file:
+      - .env
+    command: bundle exec puma -C config/puma.rb
+    volumes:
+      - .:/webapp
+      - public-data:/webapp/public
+      - tmp-data:/webapp/tmp
+      - log-data:/webapp/log
+    environment:
+      - MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
+      - MYSQL_USER=$MYSQL_USER
+      - MYSQL_PASSWORD=$MYSQL_PASSWORD
+    depends_on:
+      - db
+    networks:
+      - proxy_default
+
+  # database server: mariadb
+  db:
+    container_name: cs-rails6-db
+    image: mariadb:$MARIADB_TAG
+    env_file:
+      - .env
+    volumes:
+      - db-data:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
+      - MYSQL_USER=$MYSQL_USER
+      - MYSQL_PASSWORD=$MYSQL_PASSWORD
+    networks:
+      - proxy_default
+  # web server: nginx
+  web:
+    container_name: cs-rails6-web
+    build:
+      context: containers/nginx
+      dockerfile: Dockerfile
+      args:
+        - USERNAME=$USERNAME
+        - UID=$UID
+        - NGINX_TAG=$NGINX_TAG
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /home/$USERNAME/certs/letsencrypt/live/$DOMAIN/fullchain.pem:/etc/nginx/certs/$DOMAIN.crt
+      - /home/$USERNAME/certs/letsencrypt/live/$DOMAIN/privkey.pem:/etc/nginx/certs/$DOMAIN.key
+      - public-data:/webapp/public
+      - tmp-data:/webapp/tmp
+    environment:
+      - VIRTUAL_HOST=rails6.$DOMAIN
+      - VIRTUAL_PORT=80
+      - VIRTUAL_PORT=443
+      - VIRTUAL_PROTO=https
+      - CERT_NAME=$DOMAIN
+      - HTTPS_METHOD=noredirect
+    expose:
+      - "80"
+      - "443"
+    depends_on:
+      - app
+    networks:
+      - proxy_default
+
+networks:
+  proxy_default:
+    external: true
+
+volumes:
+  public-data:
+  tmp-data:
+  log-data:
+  db-data:
