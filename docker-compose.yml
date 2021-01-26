@@ -20,6 +20,7 @@ services:
     environment:
       - /etc/localtime:/etc/localtime:ro
       - TZ=$TZ
+      - MYSQL_HOSTNAME=$MYSQL_HOSTNAME
       - MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
       - MYSQL_USER=$MYSQL_USER
       - MYSQL_PASSWORD=$MYSQL_PASSWORD
