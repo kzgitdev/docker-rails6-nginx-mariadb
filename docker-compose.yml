@@ -62,7 +62,7 @@ services:
       - tmp-data:/webapp/tmp
     environment:
       - TZ=$TZ
-      - VIRTUAL_HOST=rails6.$DOMAIN
+      - VIRTUAL_HOST=$HOSTNAME
       - VIRTUAL_PORT=80
       - VIRTUAL_PORT=443
       - VIRTUAL_PROTO=https
